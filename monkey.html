@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Face Tracking Demo</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <style>
+    body { text-align: center; margin: 0; }
+    video, canvas { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <h2>Face Tracking Demo</h2>
+  <video id="video" width="640" height="480" autoplay muted></video>
+  <canvas id="overlay" width="640" height="480"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('overlay');
+    const context = canvas.getContext('2d');
+
+    async function startVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Cannot access webcam: ' + err);
+      }
+    }
+
+    async function init() {
+      // Load face detection model
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+      startVideo();
+    }
+
+    video.addEventListener('play', () => {
+      const displaySize = { width: video.width, height: video.height };
+      setInterval(async () => {
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        detections.forEach(det => {
+          const { x, y, width, height } = det.box;
+          context.strokeStyle = 'red';
+          context.lineWidth = 2;
+          context.strokeRect(x, y, width, height);
+        });
+      }, 100);
+    });
+
+    init();
+  </script>
+</body>
+</html>
